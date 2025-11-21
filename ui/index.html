@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Books Scraper Dashboard</title>
+
+    <!-- 1. Tailwind CSS CDN for quick styling -->
+    <!-- Note: If you have local Tailwind setup, you may remove this line. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Apply a nice default font and background */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb; /* Light background color */
+        }
+        /* Ensure the root element takes up the full height to prevent layout issues */
+        #root {
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <!-- 2. The crucial root element where React mounts the entire application -->
+    <div id="root"></div>
+
+    <!-- 3. The entry point for the React application (Vite uses type="module") -->
+    <!-- The path should be relative to this index.html file -->
+    <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

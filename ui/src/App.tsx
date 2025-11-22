@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { loadScrapedData } from './lib/loadData'; // Removed .ts extension for better compatibility
+import { loadScrapedData } from './lib/loadData';
 import { BookItem, FilterState, SortState, SortKey } from './types';
-import Filters from './components/Filters'; // Removed .tsx extension
-import Table from './components/Table';     // Removed .tsx extension
-import Chart from './components/Chart';     // Removed .tsx extension
+import Filters from './components/Filters';
+import Table from './components/Table';
+import Chart from './components/Chart';
 
-// Define initial states
+// Initial states
 const INITIAL_FILTER_STATE: FilterState = {
     searchTerm: '',
     minRating: 0,
@@ -18,158 +18,167 @@ const INITIAL_SORT_STATE: SortState = {
 };
 
 const App: React.FC = () => {
-    //  Data States
     const [rawData, setRawData] = useState<BookItem[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    //  Control States
     const [filterState, setFilterState] = useState<FilterState>(INITIAL_FILTER_STATE);
     const [sortState, setSortState] = useState<SortState>(INITIAL_SORT_STATE);
 
-    // --- Data Loading Effect ---
+    // --- NEW: pagination state ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 20;
+
+    // Reset to page 1 whenever filter or sort changes
     useEffect(() => {
-        // Load data on component mount
+        setCurrentPage(1);
+    }, [filterState, sortState]);
+
+    // Load data
+    useEffect(() => {
         loadScrapedData()
             .then(data => {
                 setRawData(data);
                 setIsLoading(false);
             })
-            .catch(error => {
-                console.error("Failed to load initial data:", error);
+            .catch(err => {
+                console.error("Failed to load data:", err);
                 setIsLoading(false);
             });
     }, []);
 
-    // --- Handlers (Passed to child components) ---
-
-    // Handler for updating filter state from the Filters component
+    // Handlers
     const handleFilterChange = useCallback((newFilters: FilterState) => {
         setFilterState(newFilters);
     }, []);
 
-    // Handler for updating sort state from the Table component
     const handleSortChange = useCallback((key: SortKey) => {
-        setSortState(prevSort => {
-            // If clicking the currently sorted column, toggle direction
-            if (prevSort.key === key) {
+        setSortState(prev => {
+            if (prev.key === key) {
                 return {
                     key,
-                    direction: prevSort.direction === 'asc' ? 'desc' : 'asc',
+                    direction: prev.direction === "asc" ? "desc" : "asc",
                 };
             }
-            // Otherwise, set new column to ascending
-            return {
-                key,
-                direction: 'asc',
-            };
+            return { key, direction: "asc" };
         });
     }, []);
-    
-    // Calculate list of unique categories for the filter component
+
+    // Available Categories
     const availableCategories = useMemo(() => {
-        const categories = rawData.map(item => item.category);
-        // Include 'All' option and sort the categories
-        return ['All', ...Array.from(new Set(categories))].sort();
+        const cats = rawData.map(i => i.category);
+        return ["All", ...Array.from(new Set(cats))].sort();
     }, [rawData]);
 
-
-    // --- Core Data Processing Logic (Filtering and Sorting) ---
+    // --- Filtering + Sorting logic (unchanged) ---
     const filteredAndSortedData = useMemo(() => {
         let result = rawData;
         const { searchTerm, minRating, categoryFilter } = filterState;
-        const { key: sortKey, direction: sortDirection } = sortState;
 
-        // Filtering Logic
+        // Filter
         result = result.filter(item => {
-            // Rating Filter
-            if (item.rating < minRating) {
-                return false;
-            }
-            
-            // Category Filter
-            if (categoryFilter !== 'All' && item.category !== categoryFilter) {
-                return false;
+            if (item.rating < minRating) return false;
+            if (categoryFilter !== "All" && item.category !== categoryFilter) return false;
+
+            if (searchTerm) {
+                const q = searchTerm.toLowerCase();
+                const title = item.title.toLowerCase();
+                const cat = item.category.toLowerCase();
+                if (!title.includes(q) && !cat.includes(q)) return false;
             }
 
-            // Search Term Filter (Case-insensitive check in title and category)
-            if (searchTerm) {
-                const term = searchTerm.toLowerCase();
-                if (
-                    !item.title.toLowerCase().includes(term) &&
-                    !item.category.toLowerCase().includes(term)
-                ) {
-                    return false;
-                }
-            }
-            
             return true;
         });
 
+        // Sort
+        if (sortState.key !== "none") {
+            const { key, direction } = sortState;
+            result = [...result].sort((a, b) => {
+                const av = a[key];
+                const bv = b[key];
 
-        //  Sorting Logic
-        if (sortKey !== 'none') {
-            result.sort((a, b) => {
-                const aValue = a[sortKey];
-                const bValue = b[sortKey];
-                
-                // Handling numbers (Price, Rating)
-                if (typeof aValue === 'number' && typeof bValue === 'number') {
-                    if (sortDirection === 'asc') return aValue - bValue;
-                    return bValue - aValue;
+                if (typeof av === "number" && typeof bv === "number") {
+                    return direction === "asc" ? av - bv : bv - av;
                 }
-                
-                // Handling strings (case-insensitive comparison, e.g., Title, Category)
-                if (typeof aValue === 'string' && typeof bValue === 'string') {
-                    const comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
-                    return sortDirection === 'asc' ? comparison : -comparison;
+                if (typeof av === "string" && typeof bv === "string") {
+                    return direction === "asc"
+                        ? av.localeCompare(bv)
+                        : bv.localeCompare(av);
                 }
-                
                 return 0;
             });
         }
-        
+
         return result;
-        
-    }, [rawData, filterState, sortState]); // Dependencies: Recalculate only when necessary
+    }, [rawData, filterState, sortState]);
 
+    // --- NEW: Pagination computations ---
+    const totalItems = filteredAndSortedData.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
 
+    const pagedData = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return filteredAndSortedData.slice(start, start + itemsPerPage);
+    }, [filteredAndSortedData, currentPage]);
+
+    // Loading & empty states unchanged
     if (isLoading) {
         return <div className="p-8 text-center text-lg font-medium text-indigo-600">Loading scraped data...</div>;
     }
 
     if (rawData.length === 0) {
-         return <div className="p-8 text-center text-lg text-red-600 font-medium">
-             Failed to load data or the items.jsonl file is empty. Please run the scraper first.
-         </div>;
+        return <div className="p-8 text-center text-lg text-red-600 font-medium">
+            No data found. Please run the scraper first.
+        </div>;
     }
 
     return (
         <div className="container mx-auto p-4 md:p-8">
             <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">Books Scraper Dashboard</h1>
 
-            {/* Filters Component */}
-            <Filters 
+            {/* Filters */}
+            <Filters
                 currentFilters={filterState}
                 onFilterChange={handleFilterChange}
                 availableCategories={availableCategories}
             />
-            
-            {/* Chart Component */}
-            <Chart 
-                data={filteredAndSortedData}
-            />
 
-            {/* Displaying Results Count */}
+            {/* Chart */}
+            <Chart data={filteredAndSortedData} />
+
+            {/* Count */}
             <div className="text-sm text-gray-600 my-4 text-center md:text-left">
-                Displaying {filteredAndSortedData.length} of {rawData.length} total items.
+                Displaying {pagedData.length} of {totalItems} filtered items.
             </div>
 
-            {/* Table Component */}
-            <Table 
-                data={filteredAndSortedData}
+            {/* Table — now uses pagedData instead of filteredAndSortedData */}
+            <Table
+                data={pagedData}
                 currentSort={sortState}
                 onSortChange={handleSortChange}
             />
+
+            {/* --- NEW PAGINATION UI --- */}
+            <div className="flex justify-center items-center gap-4 mt-6">
+                <button
+                    className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                >
+                    Previous
+                </button>
+
+                <span className="text-gray-700">
+                    Page {currentPage} / {totalPages}
+                </span>
+
+                <button
+                    className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                >
+                    Next
+                </button>
+            </div>
         </div>
     );
 };

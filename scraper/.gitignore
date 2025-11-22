@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+*.so
+
+# Ignore test cache
+tests/__pycache__/

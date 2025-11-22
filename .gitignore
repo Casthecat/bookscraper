@@ -1,0 +1,33 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Python virtualenvs
+venv/
+env/
+.venv/
+
+# Node modules
+ui/node_modules/
+ui/.parcel-cache/
+ui/dist/
+ui/build/
+
+# VSCode
+.vscode/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Scraper generated output
+scraper/data/items.jsonl
+
+# UI auto-synced output
+ui/public/data/items.jsonl
+
+# Logs
+*.log
+
+# Python packaging (just in case)
+*.egg-info/

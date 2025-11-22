@@ -14,6 +14,7 @@ class BookItem:
     category: str
     url: str             # Product page URL (relative or absolute
     image_url: Optional[str] = None    # For extensibility or debugging
+
     
     def to_jsonl(self) -> Dict[str, Any]:
         """
@@ -31,3 +32,4 @@ class ScraperArgs(NamedTuple):
     max_pages: int
     delay_ms: int
     dry_run: bool
+    concurrency: int

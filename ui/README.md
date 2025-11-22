@@ -25,6 +25,7 @@ A custom loader (`loadData.ts`) parses JSONL line-by-line and converts each reco
 - Sort by price  
 - Sort by rating  
 - Sort by category  
+- Sort by title (alphabetical)
 
 ### **4. Visual Analytics**
 A horizontal bar chart summarizes book counts by rating (1–5 stars), dynamically updating based on filters.

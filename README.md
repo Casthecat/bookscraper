@@ -76,8 +76,8 @@ project-root/
 ## 1. Clone the repository
 
 ```
-git clone <your-repo-url>
-cd <project-folder>
+git clone https://github.com/Casthecat/bookscraper
+cd bookscraper
 ```
 
 
@@ -227,6 +227,4 @@ This project demonstrates:
 - A modern React visualization frontend  
 - Engineering principles like concurrency, schema migration, and modular design  
 - Full end-to-end data pipeline from collection → processing → visualization  
-
-Perfect for showcasing SWE skills in scraping, system design, and front-end engineering.
 

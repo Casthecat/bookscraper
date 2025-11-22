@@ -1,7 +1,7 @@
 // ui/src/components/Table.tsx
 
 import React from 'react';
-import { BookItem, SortState, SortKey, SortDirection } from '../types';
+import { BookItem, SortState, SortKey } from '../types';
 
 
 interface TableProps {

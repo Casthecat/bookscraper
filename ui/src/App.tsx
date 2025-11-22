@@ -18,11 +18,11 @@ const INITIAL_SORT_STATE: SortState = {
 };
 
 const App: React.FC = () => {
-    // 1. Data States
+    //  Data States
     const [rawData, setRawData] = useState<BookItem[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    // 2. Control States
+    //  Control States
     const [filterState, setFilterState] = useState<FilterState>(INITIAL_FILTER_STATE);
     const [sortState, setSortState] = useState<SortState>(INITIAL_SORT_STATE);
 
@@ -79,7 +79,7 @@ const App: React.FC = () => {
         const { searchTerm, minRating, categoryFilter } = filterState;
         const { key: sortKey, direction: sortDirection } = sortState;
 
-        // 1. Filtering Logic
+        // Filtering Logic
         result = result.filter(item => {
             // Rating Filter
             if (item.rating < minRating) {
@@ -106,7 +106,7 @@ const App: React.FC = () => {
         });
 
 
-        // 2. Sorting Logic
+        //  Sorting Logic
         if (sortKey !== 'none') {
             result.sort((a, b) => {
                 const aValue = a[sortKey];

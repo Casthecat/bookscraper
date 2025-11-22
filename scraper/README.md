@@ -67,11 +67,20 @@ scraper/
   └── items.jsonl # Scraped output (auto-generated)
 ```
 
-
 ##  Installation
 pip install -r requirements.txt
 
 ##  Running the Scraper
+
+### Default Argument Values
+
+The scraper provides several CLI arguments. Their default values are:
+```
+--start       (default: http://books.toscrape.com/)
+--max-pages   (default: 5)
+--delay-ms    (default: 1000)
+--dry-run     (default: False)
+```
 
 ### **Basic run**
 
@@ -92,6 +101,10 @@ python -m src.main --start https://books.toscrape.com/catalogue/category/books/m
 ### **Dry run**
 
 python -m src.main --dry-run
+
+### **Example**
+
+python -m src.main --start https://books.toscrape.com/ --max-pages 10 --concurrency 3
 
 
 

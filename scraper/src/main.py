@@ -20,9 +20,7 @@ OUTPUT_PRIMARY = 'data/items.jsonl'
 OUTPUT_UI = '../ui/public/data/items.jsonl'
 
 
-# ============================================================
 # Save items to BOTH scraper/data and ui/public/data
-# ============================================================
 def save_items_to_jsonl(items: List[BookItem], saved_item_keys: Set[str]):
     newly_saved_count = 0
 
@@ -50,9 +48,7 @@ def save_items_to_jsonl(items: List[BookItem], saved_item_keys: Set[str]):
             print(f"-> Created and saved {newly_saved_count} unique items to {OUTPUT_PRIMARY} (and UI mirror)")
 
 
-# ============================================================
 # Extract category URLs
-# ============================================================
 def extract_all_category_urls(html: str, base_url: str):
     soup = BeautifulSoup(html, 'html.parser')
     links = soup.select('ul.nav-list ul li a')
@@ -64,9 +60,7 @@ def extract_all_category_urls(html: str, base_url: str):
     return urls
 
 
-# ============================================================
-# Main scraper (now with concurrency!)
-# ============================================================
+# Main scraper 
 def run_scraper(args: ScraperArgs):
 
     crawled_urls: Set[str] = set()
@@ -110,9 +104,7 @@ def run_scraper(args: ScraperArgs):
     concurrency = max(1, args.concurrency)
     print(f"Using concurrency = {concurrency}")
 
-    # -----------------------------
     # ThreadPool concurrency
-    # -----------------------------
     with ThreadPoolExecutor(max_workers=concurrency) as executor:
 
         while url_queue and pages_crawled < args.max_pages:
@@ -166,9 +158,7 @@ def run_scraper(args: ScraperArgs):
     print(f"Unique Items Saved: {len(saved_item_keys)}")
 
 
-# ============================================================
 # CLI argument parsing
-# ============================================================
 def parse_arguments() -> ScraperArgs:
     parser = argparse.ArgumentParser(
         description="Concurrent book scraper for books.toscrape.com.",

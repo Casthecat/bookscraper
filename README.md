@@ -213,6 +213,31 @@ Separate modules for fetching, parsing, robots, pagination, storage.
 ![alt text](image.png)
 
 
+#   Design Decisions
+
+I structured the scraper around small, single-purpose modules so each part of the pipeline remains easy to understand and independently testable. fetcher.py is responsible only for networking, retry logic, and polite delays; parser.py focuses purely on translating HTML into structured data; pagination.py isolates the logic of discovering the “next page”; and robots.py handles crawler permissions. This modularization keeps the codebase maintainable and makes failures easier to diagnose since each component has a narrow responsibility.
+
+I chose to use synchronous requests with a configurable worker pool rather than switching entirely to asyncio. While asyncio would provide maximal throughput, a worker-pool model strikes a practical balance between performance and readability. The goal was to build a scraper that is reliable and transparent rather than overly clever, and the concurrency level is adjustable from the command line so different environments can tune performance according to their constraints.
+
+The UI mirrors the same philosophy: minimal state, predictable rendering, and clear boundaries. Instead of introducing global state managers or server-driven queries, the UI simply treats the scraped JSON as a static dataset. This keeps the frontend lightweight and reduces implicit complexity. Types are defined explicitly in types.ts to provide a self-documenting contract between the scraper and the UI.
+
+
+#   More nice-to-haves
+
+Given more time, I would expand the scraper beyond the “snapshot” model and add incremental crawling. That would include checksums or last-modified timestamps to detect which books have changed between runs, preventing unnecessary re-downloads. I would also introduce domain-aware throttling—reading crawl-delay or custom site heuristics to adaptively adjust request pacing. Another improvement would be moving the storage layer to SQLite or another embedded database so the tool can scale to tens of thousands of items while keeping query speeds fast.
+
+For the frontend, I would add richer interactions—filtering by availability, and a debounced full-text search across titles. Pagination or virtual scrolling would also improve rendering performance for large datasets. Additionally, I would implement unit tests for UI components and possibly auto-generate TypeScript types directly from the scraper schema to ensure type parity across both layers. With more time, a small backend API could replace the static JSON and provide live querying, allowing the UI to handle far larger datasets smoothly.
+
+
+#   Known Limitations
+
+This scraper works reliably for the Books to Scrape domain, but it does make a few assumptions that would need refinement for broader use. The HTML parser expects the site to follow a fairly stable structure—for example, it looks for specific CSS classes like product_pod, price_color, and star-rating. If the site changes its layout or introduces dynamic content, the parser would require adjustments. Similarly, the breadcrumb-based category extraction works well for this dataset, but it is not yet robust against unusual or deeply nested category structures.
+
+The networking layer is intentionally simple. While retries and delays help avoid disruptive patterns, the scraper does not yet account for more complex anti-bot mechanisms such as rotating user agents, proxy pools, IP rate limits, or CAPTCHAs. For large-scale or production scraping, those would need to be added. Error handling is conservative—when an item cannot be parsed, the scraper skips it rather than attempting a partial extraction. This keeps the output clean, but it may fail silently on pages that deviate from the expected structure.
+
+On the frontend side, the UI loads the entire dataset into memory. This is perfectly fine for a few hundred entries, but it would not scale gracefully to tens of thousands of records. Features like search, filtering, and pagination are done client-side and would need optimization or a backend API if the dataset grows significantly. Finally, the pipeline is designed for batch runs rather than continuous or scheduled crawling, so incremental updates or historical tracking are not yet supported.
+
+
 #  Credits
 
 Created by **Zhuoning (Lynde) Li**  

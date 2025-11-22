@@ -16,38 +16,53 @@ from .robots import RobotsChecker
 from .data_structures import BookItem, ScraperArgs 
 
 # --- Configuration ---
-OUTPUT_FILE_PATH = 'data/items.jsonl'
+OUTPUT_PRIMARY = 'data/items.jsonl'                   # scraper internal
+OUTPUT_UI = '../ui/public/data/items.jsonl'           # UI version
+
 
 # --- Utility Functions (Place save_items_to_jsonl function here) ---
 def save_items_to_jsonl(items: List[BookItem], saved_item_keys: Set[str]):
     """
-    Saves new BookItems to the items.jsonl file and updates the set of saved keys.
+    Saves new BookItems to the items.jsonl file in BOTH:
+      1. scraper/data/items.jsonl         (primary)
+      2. ui/public/data/items.jsonl       (for the UI)
+    And updates the set of saved keys.
     """
+
     newly_saved_count = 0
-    # Ensure data directory exists
-    os.makedirs(os.path.dirname(OUTPUT_FILE_PATH), exist_ok=True)
-    
-    # Check if file exists to decide on logging message
-    file_exists = os.path.exists(OUTPUT_FILE_PATH)
-    
-    with open(OUTPUT_FILE_PATH, 'a', encoding='utf-8') as f:
+
+    # Ensure directories exist
+    os.makedirs(os.path.dirname(OUTPUT_PRIMARY), exist_ok=True)
+    os.makedirs(os.path.dirname(OUTPUT_UI), exist_ok=True)
+
+    # Check for logging
+    primary_file_exists = os.path.exists(OUTPUT_PRIMARY)
+
+    # Open both files
+    with open(OUTPUT_PRIMARY, 'a', encoding='utf-8') as f1, \
+         open(OUTPUT_UI, 'a', encoding='utf-8') as f2:
+
         for item in items:
-            # Generate a unique key for the item (e.g., based on URL)
-            item_key = item.url 
-            
+            item_key = item.url
+
             if item_key not in saved_item_keys:
-                # Save item to file
-                f.write(json.dumps(item.to_jsonl(), ensure_ascii=False) + '\n')
-                # Update the set of saved keys
+                json_line = json.dumps(item.to_jsonl(), ensure_ascii=False) + '\n'
+
+                # Write to both files
+                f1.write(json_line)
+                f2.write(json_line)
+
+                # Update dedup set
                 saved_item_keys.add(item_key)
                 newly_saved_count += 1
-                
+
+    # Logging 
     if newly_saved_count > 0:
-        if file_exists:
-            print(f"-> Saved {newly_saved_count} NEW unique items to {OUTPUT_FILE_PATH}")
+        if primary_file_exists:
+            print(f"-> Saved {newly_saved_count} NEW unique items to {OUTPUT_PRIMARY} (and UI mirror)")
         else:
-            print(f"-> Created and saved {newly_saved_count} unique items to {OUTPUT_FILE_PATH}")
-    # No logging needed if newly_saved_count is 0
+            print(f"-> Created and saved {newly_saved_count} unique items to {OUTPUT_PRIMARY} (and UI mirror)")
+
 
 # --- Main Scraper Loop ---
 def run_scraper(args: ScraperArgs):
@@ -85,9 +100,9 @@ def run_scraper(args: ScraperArgs):
     robots_checker = RobotsChecker(USER_AGENT) 
     
     # Try to load existing items to prevent duplicates if the file already exists
-    if os.path.exists(OUTPUT_FILE_PATH):
+    if os.path.exists(OUTPUT_PRIMARY):
         try:
-            with open(OUTPUT_FILE_PATH, 'r', encoding='utf-8') as f:
+            with open(OUTPUT_PRIMARY, 'r', encoding='utf-8') as f:
                 for line in f:
                     if line.strip():
                         item = json.loads(line)
@@ -95,7 +110,7 @@ def run_scraper(args: ScraperArgs):
                             saved_item_keys.add(item['url'])
             print(f"Loaded {len(saved_item_keys)} existing items from previous runs.")
         except Exception as e:
-            print(f"WARNING: Could not load existing items from {OUTPUT_FILE_PATH}. Starting fresh. Error: {e}")
+            print(f"WARNING: Could not load existing items from {OUTPUT_PRIMARY}. Starting fresh. Error: {e}")
 
     # Main Loop: Continue as long as there are URLs to crawl and the max page limit isn't reached
     while url_queue and pages_crawled < args.max_pages:

@@ -1,6 +1,6 @@
 // ui/src/lib/loadData.ts
 
-import { BookItem } from 'scraper/src/types';
+import { BookItem } from '../types';
 
 // Assumes the file is in a publicly accessible path after build
 const DATA_FILE_PATH = '/data/items.jsonl'; 

@@ -37,6 +37,11 @@ Scraper (Python) → JSONL dataset → UI (React)
 ```
 
 
+#  Demo
+
+Demo video available on Google Drive: https://drive.google.com/file/d/1DgDoEmEWN7az825BpgC4ngSWGniD3zsf/view?usp=sharing
+
+
 #  Repository Structure
 
 ```
@@ -215,27 +220,39 @@ Separate modules for fetching, parsing, robots, pagination, storage.
 
 #   Design Decisions
 
-I structured the scraper around small, single-purpose modules so each part of the pipeline remains easy to understand and independently testable. fetcher.py is responsible only for networking, retry logic, and polite delays; parser.py focuses purely on translating HTML into structured data; pagination.py isolates the logic of discovering the “next page”; and robots.py handles crawler permissions. This modularization keeps the codebase maintainable and makes failures easier to diagnose since each component has a narrow responsibility.
+The scraper is organized around small, single-purpose modules so that each part of the pipeline remains easy to understand, maintain, and test independently.
+fetcher.py handles networking, retry logic, and polite delays;
+parser.py focuses strictly on translating HTML into structured Python objects;
+pagination.py isolates the logic of detecting the next page; and
+robots.py is responsible for validating crawler permissions.
 
-I chose to use synchronous requests with a configurable worker pool rather than switching entirely to asyncio. While asyncio would provide maximal throughput, a worker-pool model strikes a practical balance between performance and readability. The goal was to build a scraper that is reliable and transparent rather than overly clever, and the concurrency level is adjustable from the command line so different environments can tune performance according to their constraints.
+This modular layout keeps responsibilities narrow and makes failures easier to diagnose—network issues are separated from parsing issues, and parsing issues are separated from navigation issues.
 
-The UI mirrors the same philosophy: minimal state, predictable rendering, and clear boundaries. Instead of introducing global state managers or server-driven queries, the UI simply treats the scraped JSON as a static dataset. This keeps the frontend lightweight and reduces implicit complexity. Types are defined explicitly in types.ts to provide a self-documenting contract between the scraper and the UI.
+I chose synchronous requests paired with a configurable worker-pool instead of a fully asynchronous design. While an asyncio-based scraper could maximize throughput, the worker-pool model strikes a practical balance between performance, debuggability, and clarity. The concurrency level is configurable from the command line, allowing the scraper to adapt across different environments without introducing unnecessary complexity.
+
+The frontend follows the same philosophy: predictable rendering, minimal global state, and explicit boundaries. Since the UI operates entirely on a static JSON dataset, no server coordination or data fetching complexity is required. All types are defined in types.ts, ensuring a clear and self-documenting contract between the Python scraper and the React UI.
 
 
 #   More nice-to-haves
 
-Given more time, I would expand the scraper beyond the “snapshot” model and add incremental crawling. That would include checksums or last-modified timestamps to detect which books have changed between runs, preventing unnecessary re-downloads. I would also introduce domain-aware throttling—reading crawl-delay or custom site heuristics to adaptively adjust request pacing. Another improvement would be moving the storage layer to SQLite or another embedded database so the tool can scale to tens of thousands of items while keeping query speeds fast.
+With additional time, I would extend the scraper beyond the current “snapshot” model and support incremental crawling. This would include storing checksums or last-modified timestamps to detect which items have changed between runs, avoiding unnecessary re-fetching.
+Domain-aware throttling could also be added—reading crawl-delay or applying heuristics based on response times to dynamically adjust pacing.
 
-For the frontend, I would add richer interactions—filtering by availability, and a debounced full-text search across titles. Pagination or virtual scrolling would also improve rendering performance for large datasets. Additionally, I would implement unit tests for UI components and possibly auto-generate TypeScript types directly from the scraper schema to ensure type parity across both layers. With more time, a small backend API could replace the static JSON and provide live querying, allowing the UI to handle far larger datasets smoothly.
+A more robust storage layer (e.g., SQLite or DuckDB) would allow the scraper to scale to tens of thousands of records while keeping queries fast and efficient. For robustness, I would also consider adding rotating user agents, proxy pools, and automated retry scheduling.
+
+On the frontend, I would expand interactions to include richer filtering (e.g., availability, price range), a debounced full-text search, and more flexible sorting. Pagination or virtualized tables would improve performance with large datasets. I would also introduce unit tests for UI components and possibly auto-generate TypeScript types directly from the Python schema to ensure perfect type alignment.
+With more time, the static JSON file could be replaced by a small backend API that supports server-side queries, enabling the UI to scale smoothly with larger datasets.
 
 
 #   Known Limitations
 
-This scraper works reliably for the Books to Scrape domain, but it does make a few assumptions that would need refinement for broader use. The HTML parser expects the site to follow a fairly stable structure—for example, it looks for specific CSS classes like product_pod, price_color, and star-rating. If the site changes its layout or introduces dynamic content, the parser would require adjustments. Similarly, the breadcrumb-based category extraction works well for this dataset, but it is not yet robust against unusual or deeply nested category structures.
+The scraper performs reliably for the Books to Scrape domain, but several assumptions limit its generality. The parser depends on stable HTML structures—such as the presence of classes like product_pod, price_color, and star-rating. If the site changes its templates or introduces dynamically rendered components, the parser would require updates.
+The category extraction logic also assumes a simple breadcrumb layout and is not yet robust against deeper or unconventional category structures.
 
-The networking layer is intentionally simple. While retries and delays help avoid disruptive patterns, the scraper does not yet account for more complex anti-bot mechanisms such as rotating user agents, proxy pools, IP rate limits, or CAPTCHAs. For large-scale or production scraping, those would need to be added. Error handling is conservative—when an item cannot be parsed, the scraper skips it rather than attempting a partial extraction. This keeps the output clean, but it may fail silently on pages that deviate from the expected structure.
+The networking layer intentionally avoids advanced anti-bot measures. While retries and delays provide basic politeness, the scraper does not currently support proxy rotation, user-agent cycling, rate-limit detection, or CAPTCHA handling. These would be required for large-scale or production-grade scraping.
 
-On the frontend side, the UI loads the entire dataset into memory. This is perfectly fine for a few hundred entries, but it would not scale gracefully to tens of thousands of records. Features like search, filtering, and pagination are done client-side and would need optimization or a backend API if the dataset grows significantly. Finally, the pipeline is designed for batch runs rather than continuous or scheduled crawling, so incremental updates or historical tracking are not yet supported.
+On the frontend, the entire dataset is loaded into memory. This is sufficient for a few hundred items but will not scale efficiently to tens of thousands. All search, filtering, and pagination operations are client-side and would eventually need server support for optimal performance.
+Finally, the overall pipeline is built for manual batch runs rather than scheduled or continuous crawling, and therefore lacks incremental update logic and historical tracking.
 
 
 #  Credits

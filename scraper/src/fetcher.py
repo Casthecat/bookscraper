@@ -50,7 +50,6 @@ def fetch_page(url: str, delay_ms: int) -> Optional[str]:
             if response.status_code == 200:
                 print(f"Successfully fetched {url}")
                 
-                # --- FIX FOR GARBLED CHARACTERS (乱码) ---
                 # Explicitly set encoding to UTF-8 to prevent 'requests' from guessing wrong
                 # and causing symbols (like '£' being read as 'Â£') to appear garbled.
                 response.encoding = 'utf-8' 

@@ -7,6 +7,8 @@ from collections import deque
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
 
 # Import modules
 from .fetcher import fetch_page, USER_AGENT
@@ -16,8 +18,8 @@ from .robots import RobotsChecker
 from .data_structures import BookItem, ScraperArgs
 
 # Output paths
-OUTPUT_PRIMARY = 'data/items.jsonl'
-OUTPUT_UI = '../ui/public/data/items.jsonl'
+OUTPUT_PRIMARY = Path(__file__).resolve().parent.parent / "data" / "items.jsonl"
+OUTPUT_UI = Path(__file__).resolve().parent.parent.parent / "ui" / "public" / "data" / "items.jsonl"
 
 
 # Save items to BOTH scraper/data and ui/public/data
@@ -170,7 +172,6 @@ def parse_arguments() -> ScraperArgs:
     parser.add_argument('-d', '--delay-ms', type=int, default=1000)
     parser.add_argument('--dry-run', action='store_true')
 
-    # NEW: concurrency argument
     parser.add_argument(
         '-c', '--concurrency',
         type=int,
@@ -193,9 +194,7 @@ def parse_arguments() -> ScraperArgs:
         sys.exit(0)
 
 
-# ============================================================
 # Main
-# ============================================================
 def main():
     args = parse_arguments()
 
